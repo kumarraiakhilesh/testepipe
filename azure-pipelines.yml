@@ -5,6 +5,10 @@ pool:
 
 variables:
   serviceConnection: 'akhilesh27may'
+  resourceGroup: 'c1apgenikatestlele'
+  storageAccount: 'capstora2'
+  containerName: 'pipetest27'
+  tfStateKey: 'capstora.tfstate'
 
 stages:
 
@@ -12,7 +16,7 @@ stages:
 # 1. FORMAT
 # ---------------------------
 - stage: FMT
-  displayName: "Terraform Format Check"
+  displayName: "Terraform Format"
   jobs:
   - job: fmt
     steps:
@@ -20,20 +24,23 @@ stages:
       inputs:
         terraformVersion: '1.5.7'
 
-    - script: terraform fmt -recursive
-      displayName: "Auto Fix Terraform Format"
+    - script: |
+        terraform fmt -recursive
+      displayName: "Auto Format Terraform"
 
-    - script: terraform fmt -check -recursive
-      displayName: "Verify Terraform Format"
+    - script: |
+        terraform fmt -check -recursive
+      displayName: "Verify Format"
 
 # ---------------------------
-# 2. VALIDATE
+# 2. VALIDATE + INIT
 # ---------------------------
 - stage: VALIDATE
   dependsOn: FMT
   jobs:
   - job: validate
     steps:
+
     - task: TerraformInstaller@1
       inputs:
         terraformVersion: '1.5.7'
@@ -44,10 +51,10 @@ stages:
         provider: 'azurerm'
         command: 'init'
         backendServiceArm: $(serviceConnection)
-        backendAzureRmResourceGroupName: 'c1apgenikatestlele'
-        backendAzureRmStorageAccountName: 'capstora2'
-        backendAzureRmContainerName: 'pipetest27'
-        backendAzureRmKey: 'capstora.tfstate'
+        backendAzureRmResourceGroupName: $(resourceGroup)
+        backendAzureRmStorageAccountName: $(storageAccount)
+        backendAzureRmContainerName: $(containerName)
+        backendAzureRmKey: $(tfStateKey)
 
     - task: TerraformTask@5
       displayName: "Terraform Validate"
@@ -56,26 +63,28 @@ stages:
         command: 'validate'
 
 # ---------------------------
-# 3. SECURITY
+# 3. SECURITY SCAN
 # ---------------------------
 - stage: SECURITY
   dependsOn: VALIDATE
   jobs:
   - job: security
     steps:
+
     - powershell: |
         choco install tfsec -y
         tfsec .
-      displayName: "Run tfsec scan"
+      displayName: "TFSEC Scan"
 
 # ---------------------------
-# 4. PLAN (FIXED)
+# 4. PLAN
 # ---------------------------
 - stage: PLAN
   dependsOn: SECURITY
   jobs:
   - job: plan
     steps:
+
     - task: TerraformInstaller@1
       inputs:
         terraformVersion: '1.5.7'
@@ -86,10 +95,10 @@ stages:
         provider: 'azurerm'
         command: 'init'
         backendServiceArm: $(serviceConnection)
-        backendAzureRmResourceGroupName: 'c1apgenikatestlele'
-        backendAzureRmStorageAccountName: 'capstora2'
-        backendAzureRmContainerName: 'pipetest27'
-        backendAzureRmKey: 'capstora.tfstate'
+        backendAzureRmResourceGroupName: $(resourceGroup)
+        backendAzureRmStorageAccountName: $(storageAccount)
+        backendAzureRmContainerName: $(containerName)
+        backendAzureRmKey: $(tfStateKey)
 
     - task: TerraformTask@5
       displayName: "Terraform Plan"
@@ -107,6 +116,7 @@ stages:
   jobs:
   - job: apply
     steps:
+
     - task: TerraformInstaller@1
       inputs:
         terraformVersion: '1.5.7'
@@ -117,10 +127,10 @@ stages:
         provider: 'azurerm'
         command: 'init'
         backendServiceArm: $(serviceConnection)
-        backendAzureRmResourceGroupName: 'c1apgenikatestlele'
-        backendAzureRmStorageAccountName: 'capstora2'
-        backendAzureRmContainerName: 'pipetest27'
-        backendAzureRmKey: 'capstora.tfstate'
+        backendAzureRmResourceGroupName: $(resourceGroup)
+        backendAzureRmStorageAccountName: $(storageAccount)
+        backendAzureRmContainerName: $(containerName)
+        backendAzureRmKey: $(tfStateKey)
 
     - task: TerraformTask@5
       displayName: "Terraform Apply"
