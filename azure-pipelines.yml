@@ -20,12 +20,10 @@ stages:
       inputs:
         terraformVersion: '1.5.7'
 
-    - script: |
-        terraform fmt -recursive
+    - script: terraform fmt -recursive
       displayName: "Auto Fix Terraform Format"
 
-    - script: |
-        terraform fmt -check -recursive
+    - script: terraform fmt -check -recursive
       displayName: "Verify Terraform Format"
 
 # ---------------------------
@@ -41,6 +39,7 @@ stages:
         terraformVersion: '1.5.7'
 
     - task: TerraformTask@5
+      displayName: "Terraform Init"
       inputs:
         provider: 'azurerm'
         command: 'init'
@@ -51,6 +50,7 @@ stages:
         backendAzureRmKey: 'capstora.tfstate'
 
     - task: TerraformTask@5
+      displayName: "Terraform Validate"
       inputs:
         provider: 'azurerm'
         command: 'validate'
@@ -69,7 +69,7 @@ stages:
       displayName: "Run tfsec scan"
 
 # ---------------------------
-# 4. PLAN
+# 4. PLAN (FIXED)
 # ---------------------------
 - stage: PLAN
   dependsOn: SECURITY
@@ -81,6 +81,7 @@ stages:
         terraformVersion: '1.5.7'
 
     - task: TerraformTask@5
+      displayName: "Terraform Init"
       inputs:
         provider: 'azurerm'
         command: 'init'
@@ -91,6 +92,7 @@ stages:
         backendAzureRmKey: 'capstora.tfstate'
 
     - task: TerraformTask@5
+      displayName: "Terraform Plan"
       inputs:
         provider: 'azurerm'
         command: 'plan'
@@ -110,6 +112,7 @@ stages:
         terraformVersion: '1.5.7'
 
     - task: TerraformTask@5
+      displayName: "Terraform Init"
       inputs:
         provider: 'azurerm'
         command: 'init'
@@ -120,6 +123,7 @@ stages:
         backendAzureRmKey: 'capstora.tfstate'
 
     - task: TerraformTask@5
+      displayName: "Terraform Apply"
       inputs:
         provider: 'azurerm'
         command: 'apply'
