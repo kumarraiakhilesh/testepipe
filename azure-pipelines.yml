@@ -58,16 +58,11 @@ stages:
 # ---------------------------
 # 3. SECURITY SCAN
 # ---------------------------
-- stage: SECURITY
-  displayName: "Terraform Security Scan"
-  dependsOn: VALIDATE
-  jobs:
-  - job: security
-    steps:
-    - script: |
-        curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
-        tfsec .
-      displayName: "Run tfsec scan"
+-- script: |
+    echo Installing tfsec...
+    choco install tfsec -y
+    tfsec .
+  displayName: "Run tfsec scan"
 
 # ---------------------------
 # 4. INIT + PLAN
