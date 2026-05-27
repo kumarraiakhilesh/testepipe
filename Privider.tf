@@ -2,15 +2,15 @@ terraform {
  required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "4.69.0"
+      version = "4.74.0"
     }
 }
-# backend "azurerm" {
-# resource_group_name="c1apgenikatestlele"
-# storage_account_name ="capstora"
-# container_name = "pipetest23"
-# key = "capstora.tfstate"
-# }
+ backend "azurerm" {
+ resource_group_name="c1apgenikatestlele"
+storage_account_name ="capstora2"
+ container_name = "pipetest27"
+ key = "capstora.tfstate"
+ }
 }
 provider "azurerm" {
 features {}
