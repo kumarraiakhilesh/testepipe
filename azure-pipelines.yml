@@ -1,5 +1,3 @@
-
-
 trigger: none
 
 pool:
@@ -7,38 +5,36 @@ pool:
 
 variables:
   serviceConnection: 'akhilesh27may'
-  tfWorkingDir: '.'
 
 stages:
 
 # ---------------------------
-# 1. FORMAT CHECK
+# 1. FORMAT
 # ---------------------------
 - stage: FMT
-  displayName: "Terraform Format Check"
+  displayName: "Terraform Format"
   jobs:
   - job: fmt
     steps:
     - task: TerraformInstaller@1
       inputs:
-        terraformVersion: 'latest'
+        terraformVersion: '1.5.7'
 
     - script: |
         terraform fmt -check -recursive
-      displayName: "Check Terraform Formatting"
+      displayName: "Format Check"
 
 # ---------------------------
 # 2. VALIDATE
 # ---------------------------
 - stage: VALIDATE
-  displayName: "Terraform Validate"
   dependsOn: FMT
   jobs:
   - job: validate
     steps:
     - task: TerraformInstaller@1
       inputs:
-        terraformVersion: 'latest'
+        terraformVersion: '1.5.7'
 
     - task: TerraformTask@5
       inputs:
@@ -56,29 +52,33 @@ stages:
         command: 'validate'
 
 # ---------------------------
-# 3. SECURITY SCAN
+# 3. SECURITY (FIXED FOR WINDOWS AGENT)
 # ---------------------------
--- script: |
-    echo Installing tfsec...
-    choco install tfsec -y
-    tfsec .
-  displayName: "Run tfsec scan"
+- stage: SECURITY
+  dependsOn: VALIDATE
+  jobs:
+  - job: security
+    steps:
+
+    # Install tfsec using chocolatey (Windows-safe)
+    - powershell: |
+        choco install tfsec -y
+        tfsec .
+      displayName: "Run tfsec scan"
 
 # ---------------------------
-# 4. INIT + PLAN
+# 4. PLAN
 # ---------------------------
 - stage: PLAN
-  displayName: "Terraform Plan"
   dependsOn: SECURITY
   jobs:
   - job: plan
     steps:
     - task: TerraformInstaller@1
       inputs:
-        terraformVersion: 'latest'
+        terraformVersion: '1.5.7'
 
     - task: TerraformTask@5
-      displayName: "Terraform Init"
       inputs:
         provider: 'azurerm'
         command: 'init'
@@ -89,17 +89,15 @@ stages:
         backendAzureRmKey: 'capstora.tfstate'
 
     - task: TerraformTask@5
-      displayName: "Terraform Plan"
       inputs:
         provider: 'azurerm'
         command: 'plan'
         environmentServiceNameAzureRM: $(serviceConnection)
 
 # ---------------------------
-# 5. AUTO APPROVE + APPLY
+# 5. APPLY
 # ---------------------------
 - stage: APPLY
-  displayName: "Auto Apply"
   dependsOn: PLAN
   condition: succeeded()
   jobs:
@@ -107,10 +105,9 @@ stages:
     steps:
     - task: TerraformInstaller@1
       inputs:
-        terraformVersion: 'latest'
+        terraformVersion: '1.5.7'
 
     - task: TerraformTask@5
-      displayName: "Terraform Init"
       inputs:
         provider: 'azurerm'
         command: 'init'
@@ -121,7 +118,6 @@ stages:
         backendAzureRmKey: 'capstora.tfstate'
 
     - task: TerraformTask@5
-      displayName: "Terraform Apply (Auto Approve)"
       inputs:
         provider: 'azurerm'
         command: 'apply'
