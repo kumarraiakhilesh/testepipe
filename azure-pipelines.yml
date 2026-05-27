@@ -1,0 +1,134 @@
+
+
+trigger: none
+
+pool:
+  name: adresh
+
+variables:
+  serviceConnection: 'akhilesh27may'
+  tfWorkingDir: '.'
+
+stages:
+
+# ---------------------------
+# 1. FORMAT CHECK
+# ---------------------------
+- stage: FMT
+  displayName: "Terraform Format Check"
+  jobs:
+  - job: fmt
+    steps:
+    - task: TerraformInstaller@1
+      inputs:
+        terraformVersion: 'latest'
+
+    - script: |
+        terraform fmt -check -recursive
+      displayName: "Check Terraform Formatting"
+
+# ---------------------------
+# 2. VALIDATE
+# ---------------------------
+- stage: VALIDATE
+  displayName: "Terraform Validate"
+  dependsOn: FMT
+  jobs:
+  - job: validate
+    steps:
+    - task: TerraformInstaller@1
+      inputs:
+        terraformVersion: 'latest'
+
+    - task: TerraformTask@5
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        backendServiceArm: $(serviceConnection)
+        backendAzureRmResourceGroupName: 'c1apgenikatestlele'
+        backendAzureRmStorageAccountName: 'capstora2'
+        backendAzureRmContainerName: 'pipetest27'
+        backendAzureRmKey: 'capstora.tfstate'
+
+    - task: TerraformTask@5
+      inputs:
+        provider: 'azurerm'
+        command: 'validate'
+
+# ---------------------------
+# 3. SECURITY SCAN
+# ---------------------------
+- stage: SECURITY
+  displayName: "Terraform Security Scan"
+  dependsOn: VALIDATE
+  jobs:
+  - job: security
+    steps:
+    - script: |
+        curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
+        tfsec .
+      displayName: "Run tfsec scan"
+
+# ---------------------------
+# 4. INIT + PLAN
+# ---------------------------
+- stage: PLAN
+  displayName: "Terraform Plan"
+  dependsOn: SECURITY
+  jobs:
+  - job: plan
+    steps:
+    - task: TerraformInstaller@1
+      inputs:
+        terraformVersion: 'latest'
+
+    - task: TerraformTask@5
+      displayName: "Terraform Init"
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        backendServiceArm: $(serviceConnection)
+        backendAzureRmResourceGroupName: 'c1apgenikatestlele'
+        backendAzureRmStorageAccountName: 'capstora2'
+        backendAzureRmContainerName: 'pipetest27'
+        backendAzureRmKey: 'capstora.tfstate'
+
+    - task: TerraformTask@5
+      displayName: "Terraform Plan"
+      inputs:
+        provider: 'azurerm'
+        command: 'plan'
+        environmentServiceNameAzureRM: $(serviceConnection)
+
+# ---------------------------
+# 5. AUTO APPROVE + APPLY
+# ---------------------------
+- stage: APPLY
+  displayName: "Auto Apply"
+  dependsOn: PLAN
+  condition: succeeded()
+  jobs:
+  - job: apply
+    steps:
+    - task: TerraformInstaller@1
+      inputs:
+        terraformVersion: 'latest'
+
+    - task: TerraformTask@5
+      displayName: "Terraform Init"
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        backendServiceArm: $(serviceConnection)
+        backendAzureRmResourceGroupName: 'c1apgenikatestlele'
+        backendAzureRmStorageAccountName: 'capstora2'
+        backendAzureRmContainerName: 'pipetest27'
+        backendAzureRmKey: 'capstora.tfstate'
+
+    - task: TerraformTask@5
+      displayName: "Terraform Apply (Auto Approve)"
+      inputs:
+        provider: 'azurerm'
+        command: 'apply'
+        environmentServiceNameAzureRM: $(serviceConnection)
+        args: '-auto-approve'
