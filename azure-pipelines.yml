@@ -24,13 +24,11 @@ stages:
       inputs:
         terraformVersion: '1.5.7'
 
-    - script: |
-        terraform fmt -recursive
-      displayName: "Auto Format Terraform"
+    - script: terraform fmt -recursive
+      displayName: "Auto Format Terraform Code"
 
-    - script: |
-        terraform fmt -check -recursive
-      displayName: "Verify Format"
+    - script: terraform fmt -check -recursive
+      displayName: "Validate Format"
 
 # ---------------------------
 # 2. VALIDATE + INIT
@@ -74,7 +72,7 @@ stages:
     - powershell: |
         choco install tfsec -y
         tfsec .
-      displayName: "TFSEC Scan"
+      displayName: "Run tfsec Security Scan"
 
 # ---------------------------
 # 4. PLAN
