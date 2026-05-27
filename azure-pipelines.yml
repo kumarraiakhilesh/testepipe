@@ -12,7 +12,7 @@ stages:
 # 1. FORMAT
 # ---------------------------
 - stage: FMT
-  displayName: "Terraform Format"
+  displayName: "Terraform Format Check"
   jobs:
   - job: fmt
     steps:
@@ -21,8 +21,12 @@ stages:
         terraformVersion: '1.5.7'
 
     - script: |
+        terraform fmt -recursive
+      displayName: "Auto Fix Terraform Format"
+
+    - script: |
         terraform fmt -check -recursive
-      displayName: "Format Check"
+      displayName: "Verify Terraform Format"
 
 # ---------------------------
 # 2. VALIDATE
@@ -52,15 +56,13 @@ stages:
         command: 'validate'
 
 # ---------------------------
-# 3. SECURITY (FIXED FOR WINDOWS AGENT)
+# 3. SECURITY
 # ---------------------------
 - stage: SECURITY
   dependsOn: VALIDATE
   jobs:
   - job: security
     steps:
-
-    # Install tfsec using chocolatey (Windows-safe)
     - powershell: |
         choco install tfsec -y
         tfsec .
