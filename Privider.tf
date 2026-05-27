@@ -9,7 +9,7 @@ terraform {
  resource_group_name="c1apgenikatestlele"
 storage_account_name ="capstora2"
  container_name = "pipetest27"
- key = "capstora.tfstate"
+ key = "capstora1.tfstate"
  }
 }
 provider "azurerm" {
